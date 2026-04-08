@@ -1,0 +1,51 @@
+name: email-triage-env
+version: "1.0.0"
+description: >
+  A real-world email triage environment where an AI agent must categorize,
+  prioritize, and draft replies to incoming emails. Simulates a professional
+  inbox management workflow with increasing complexity.
+author: hackathon-team
+license: MIT
+
+environment:
+  type: text
+  api_base: /
+  endpoints:
+    reset: /reset
+    step: /step
+    state: /state
+    tasks: /tasks
+
+tasks:
+  - id: categorize_email
+    name: "Categorize Email"
+    difficulty: easy
+    description: >
+      Given an email, classify it into one of the predefined categories:
+      [spam, billing, technical_support, general_inquiry, complaint, urgent].
+    reward_range: [0.0, 1.0]
+
+  - id: prioritize_inbox
+    name: "Prioritize Inbox"
+    difficulty: medium
+    description: >
+      Given a list of 5 emails, rank them by priority (1=highest, 5=lowest).
+      Priority is determined by urgency, sender type, and content severity.
+    reward_range: [0.0, 1.0]
+
+  - id: draft_reply
+    name: "Draft Email Reply"
+    difficulty: hard
+    description: >
+      Given an email and its category, draft a professional reply that
+      addresses all key points, maintains appropriate tone, and includes
+      a resolution or next steps.
+    reward_range: [0.0, 1.0]
+
+observation_space:
+  type: text
+  description: "JSON object containing email data (subject, sender, body, metadata)"
+
+action_space:
+  type: text
+  description: "JSON object containing agent's response (category/priority/reply depending on task)"
