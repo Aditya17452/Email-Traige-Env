@@ -25,6 +25,7 @@ ENV_URL      = os.getenv("ENV_URL",      "http://localhost:7860")
 
 BENCHMARK = "email-triage-env"
 SUCCESS_THRESHOLD = 0.5
+SCORE_EPS = 0.01
 
 client = None
 if OpenAI is not None and HF_TOKEN:
@@ -57,6 +58,10 @@ def log_step(step: int, action: str, reward: float, done: bool, error: Optional[
 def log_end(success: bool, steps: int, score: float, rewards: List[float]):
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
     print(f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}", flush=True)
+
+
+def _strict_score(value: float) -> float:
+    return min(max(float(value), SCORE_EPS), 1.0 - SCORE_EPS)
 
 
 def _extract_input_payload(observation: dict) -> dict:
@@ -183,12 +188,14 @@ def run_task(task_id: str) -> dict:
 
         log_step(step=1, action=action_str, reward=reward, done=done, error=error_msg)
 
-        score   = max(0.0, min(1.0, float(reward)))  # normalized score in [0, 1]
+        score   = _strict_score(float(reward))
         success = score >= SUCCESS_THRESHOLD
 
     except Exception as e:
-        log_step(step=1, action="{}", reward=0.0, done=True, error=str(e)[:80])
-        rewards = [0.0]
+        fallback = _strict_score(0.0)
+        log_step(step=1, action="{}", reward=fallback, done=True, error=str(e)[:80])
+        rewards = [fallback]
+        score = fallback
         steps_taken = 1
 
     log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
