@@ -1,3 +1,15 @@
+---
+title: Email Triage Env
+emoji: 📧
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_port: 7860
+pinned: false
+tags:
+  - openenv
+---
+
 # 📧 Email Triage OpenEnv Environment
 
 A real-world **email triage environment** built on the [OpenEnv](https://github.com/openenv/openenv) framework.  
@@ -7,15 +19,6 @@ An AI agent learns to categorize, prioritize, and draft replies to emails — si
 
 ## 🌍 Environment Description
 
-| Property | Value |
-|---|---|
-| **Domain** | Email / Workplace Productivity |
-| **Type** | Text-based |
-| **Tasks** | 3 (Easy → Medium → Hard) |
-| **Reward Range** | 0.0 – 1.0 per task |
-| **Episode Length** | 1 step per episode |
-
----
 
 ## 🎯 Tasks
 
@@ -54,7 +57,7 @@ Each observation is a JSON object:
 {
   "task": "categorize_email",
   "instruction": "Classify this email into exactly one of: ...",
-  "email": {
+  "input": {
     "id": "e001",
     "subject": "URGENT: Server down in production",
     "sender": "ops-team@company.com",
@@ -142,6 +145,33 @@ export MODEL_NAME="gpt-4o-mini"
 export HF_TOKEN="your-hf-or-openai-token"
 export ENV_URL="http://localhost:7860"
 
+python inference.py
+```
+
+### Pre-Submission Validation (Fast)
+
+Run these checks before submitting:
+
+```bash
+# 1) Start environment
+uvicorn environment:app --host 0.0.0.0 --port 7860
+
+# 2) Validate endpoints/tasks/reward ranges
+python prevalidate.py
+
+# 3) Validate inference format and end-to-end run
+python inference.py
+```
+
+Docker parity check:
+
+```bash
+docker build -t email-triage-env .
+docker run --rm -p 7860:7860 email-triage-env
+
+# In another terminal:
+export ENV_URL="http://localhost:7860"
+python prevalidate.py
 python inference.py
 ```
 

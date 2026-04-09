@@ -1,5 +1,6 @@
 name: email-triage-env
 version: "1.0.0"
+entrypoint: environment.py
 description: >
   A real-world email triage environment where an AI agent must categorize,
   prioritize, and draft replies to incoming emails. Simulates a professional
