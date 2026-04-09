@@ -8,6 +8,12 @@ from data import EMAILS, INBOX_SETS, REPLY_CRITERIA
 EMAIL_MAP = {e["id"]: e for e in EMAILS}
 
 VALID_CATEGORIES = ["spam", "billing", "technical_support", "general_inquiry", "complaint", "urgent"]
+EPS = 0.01
+
+
+def _strict_reward(value: float) -> float:
+    """Return reward strictly inside (0, 1) for validator compatibility."""
+    return round(min(max(float(value), EPS), 1.0 - EPS), 4)
 
 # ── Task 1: Categorize Email ────────────────────────────────────────────────
 
@@ -20,13 +26,13 @@ def grade_categorize(email_id: str, predicted_category: str) -> dict:
     """
     email = EMAIL_MAP.get(email_id)
     if not email:
-        return {"reward": 0.0, "feedback": f"Unknown email id: {email_id}"}
+        return {"reward": _strict_reward(0.0), "feedback": f"Unknown email id: {email_id}"}
 
     pred = predicted_category.strip().lower().replace(" ", "_")
     true = email["true_category"]
 
     if pred == true:
-        return {"reward": 1.0, "feedback": f"Correct! Category is '{true}'."}
+        return {"reward": _strict_reward(1.0), "feedback": f"Correct! Category is '{true}'."}
 
     # Partial credit: related categories
     partial_credit_map = {
@@ -41,12 +47,12 @@ def grade_categorize(email_id: str, predicted_category: str) -> dict:
 
     if partial > 0:
         return {
-            "reward": partial,
+            "reward": _strict_reward(partial),
             "feedback": f"Partially correct. Predicted '{pred}', true is '{true}'. Related but not exact."
         }
 
     return {
-        "reward": 0.0,
+        "reward": _strict_reward(0.0),
         "feedback": f"Incorrect. Predicted '{pred}', true is '{true}'."
     }
 
@@ -62,21 +68,21 @@ def grade_prioritize(inbox_id: str, predicted_order: list) -> dict:
     """
     inbox = next((i for i in INBOX_SETS if i["id"] == inbox_id), None)
     if not inbox:
-        return {"reward": 0.0, "feedback": f"Unknown inbox id: {inbox_id}"}
+        return {"reward": _strict_reward(0.0), "feedback": f"Unknown inbox id: {inbox_id}"}
 
     true_order = inbox["true_priority_order"]
     n = len(true_order)
 
     if len(predicted_order) != n:
         return {
-            "reward": 0.0,
+            "reward": _strict_reward(0.0),
             "feedback": f"Expected {n} email IDs in order, got {len(predicted_order)}."
         }
 
     # Check all IDs are valid
     if set(predicted_order) != set(true_order):
         return {
-            "reward": 0.0,
+            "reward": _strict_reward(0.0),
             "feedback": f"Email IDs don't match. Expected: {true_order}"
         }
 
@@ -102,7 +108,7 @@ def grade_prioritize(inbox_id: str, predicted_order: list) -> dict:
     reward = (tau + 1) / 2  # normalize to [0, 1]
 
     return {
-        "reward": round(reward, 4),
+        "reward": _strict_reward(reward),
         "feedback": f"Kendall Tau: {tau:.3f}. Reward: {reward:.3f}. True order: {true_order}"
     }
 
@@ -166,7 +172,7 @@ def grade_reply(email_id: str, reply_text: str) -> dict:
         feedback_parts.append("✗ Does not clearly acknowledge the issue")
 
     return {
-        "reward": round(min(score, 1.0), 4),
+        "reward": _strict_reward(min(score, 1.0)),
         "feedback": " | ".join(feedback_parts)
     }
 
@@ -189,4 +195,4 @@ def _generic_reply_grade(reply_text: str) -> dict:
     if any(w in reply_lower for w in ["will", "can", "shall", "assist", "help", "resolve"]):
         score += 0.3
 
-    return {"reward": round(min(score, 1.0), 4), "feedback": "Generic grading applied."}
+    return {"reward": _strict_reward(min(score, 1.0)), "feedback": "Generic grading applied."}
